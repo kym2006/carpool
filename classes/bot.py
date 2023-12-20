@@ -57,7 +57,7 @@ class Bot(commands.AutoShardedBot):
                 name TEXT,
                 description TEXT,
                 join_message TEXT,
-                limit INTEGER
+                size INTEGER
             )
             """
         self.db.execute(query)
@@ -82,7 +82,7 @@ class Bot(commands.AutoShardedBot):
                 log.error(traceback.print_exc())
 
         await self.start(self.config.token)
-        
+        await self.tree.sync()
 
 
 

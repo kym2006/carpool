@@ -21,15 +21,17 @@ class Core(commands.Cog):
     
     @app_commands.command(description="Create a new pool. Specify name, description, message shown to new members, and size of this group", name="createpool")
 
-    async def createpool(self, ctx, *, name: str, description: str, message: str, limit: int):
+    async def createpool(self, ctx, *, name: str, description: str, join_message: str, size: int):
         cursor = self.bot.db.cursor()
         
         # Execute the INSERT statement
-        cursor.execute("INSERT INTO pools (owner_id, name, description, join_message, limit) VALUES (?, ?, ?, ?, ?)",
-                       (ctx.user.id, name, description, join_message, limit))
+        cursor.execute("INSERT INTO pools (owner_id, name, description, join_message, size) VALUES (?, ?, ?, ?, ?)",
+                       (ctx.user.id, name, description, join_message, size))
+        # create a new row in the members table for this pool
+        cursor.execute("INSERT INTO members (pool_id, user_id) VALUES (?, ?)", (cursor.lastrowid, ctx.user.id))
+
         # Commit the changes and close the connection
         self.bot.db.commit()
-        self.bot.db.close()
         await ctx.response.send_message("Pool created successfully!")
     
     @app_commands.command(description="Join a pool", name="joinpool")
@@ -55,7 +57,6 @@ class Core(commands.Cog):
             # Commit the changes and close the connection
             
             self.bot.db.commit()
-            self.bot.db.close()
             await ctx.response.send_message("Joined pool successfully!")
             # send the pool's join message to the member
             await ctx.user.send(pool[4])
@@ -78,7 +79,7 @@ class Core(commands.Cog):
             # Commit the changes and close the connection
             
             self.bot.db.commit()
-            self.bot.db.close()
+
             await ctx.response.send_message("Left pool successfully!")
 
     @app_commands.command(description="List all pools", name="listpools")
@@ -89,8 +90,11 @@ class Core(commands.Cog):
         if pools is None:
             await ctx.response.send_message("No pools found!")
         else:
+            res=""
             for pool in pools:
-                await ctx.response.send_message(f"{pool[0]}: {pool[1]}")
+                res+=str(pool[2])+": "+str(pool[3])+"\n"
+
+            await ctx.response.send_message(res)
         
         # Commit the changes and close the connection
     
@@ -111,14 +115,14 @@ class Core(commands.Cog):
             else:
                 res=""
                 for member in members:
-                    res+=member+"\n"
+                    res+=str(member[1])+"\n"
                 
                 await ctx.response.send_message(res)
         
         # Commit the changes and close the connection
     
         self.bot.db.commit()
-        self.bot.db.close()
+
 
     @app_commands.command(description="Delete a pool", name="deletepool")
     async def deletepool(self, ctx, *, id: int):
@@ -139,13 +143,14 @@ class Core(commands.Cog):
             # Commit the changes and close the connection
             
             self.bot.db.commit()
-            self.bot.db.close()
+
             await ctx.response.send_message("Pool deleted successfully!")
 
     @app_commands.command(description="Search for a pool", name="searchpool")
     async def searchpool(self, ctx, *, name: str):
         cursor = self.bot.db.cursor()
-        cursor.execute("SELECT * FROM pools WHERE name LIKE %?%", (name,))
+        # select all that contain the name
+        cursor.execute("SELECT * FROM pools WHERE name LIKE ?", (f"%{name}%",))
         pools = cursor.fetchall()
         if pools is None:
             await ctx.response.send_message("No pools found!")
@@ -158,7 +163,7 @@ class Core(commands.Cog):
         self.bot.db.commit()
 
     @app_commands.command(description="Edit a pool", name="editpool")
-    async def editpool(self, ctx, *, id: int, name: str, description: str, message: str, limit: int):
+    async def editpool(self, ctx, *, id: int, name: str, description: str, message: str, size: int):
         cursor = self.bot.db.cursor()
         cursor.execute("SELECT * FROM pools WHERE id = ?", (id,))
         pool = cursor.fetchone()
@@ -168,12 +173,12 @@ class Core(commands.Cog):
             if pool[1] != ctx.user.id:
                 await ctx.response.send_message("You are not the owner of this pool!")
             else:
-                cursor.execute("UPDATE pools SET name = ?, description = ?, join_message = ?, limit = ? WHERE id = ?", (name, description, message, limit, id))
+                cursor.execute("UPDATE pools SET name = ?, description = ?, join_message = ?, size = ? WHERE id = ?", (name, description, message, size, id))
             
             # Commit the changes and close the connection
             
             self.bot.db.commit()
-            self.bot.db.close()
+
             await ctx.response.send_message("Pool updated successfully!")
 
 
@@ -185,7 +190,7 @@ class Core(commands.Cog):
         if pool is None:
             await ctx.response.send_message("Pool not found!")
         else:
-            await ctx.response.send_message(f"Name: {pool[1]}\nDescription: {pool[2]}\nJoin message: {pool[3]}\nLimit: {pool[4]}")
+            await ctx.response.send_message(f"Name: {pool[1]}\nDescription: {pool[2]}\nJoin message: {pool[3]}\Size: {pool[4]}")
     
     @app_commands.command(description="Get info about a user", name="userinfo")
     async def userinfo(self, ctx, *, id: int):
@@ -210,6 +215,6 @@ class Core(commands.Cog):
 
 
 
-    async def setup(bot):
-        await bot.add_cog(Core(bot))
+async def setup(bot):
+    await bot.add_cog(Core(bot))
 

@@ -5,10 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 token = os.getenv("TOKEN")
-database_url = os.getenv("DB_URL")
-statcord = os.getenv("statcord")
-randomorg = os.getenv("RANDOMORGTOKEN")
-pastebin = os.getenv("PASTEBIN")
 if "testing" in os.environ:
     token = os.getenv("TEST_TOKEN")
 
@@ -31,9 +27,9 @@ admins = [
 ]
 
 # Channels to send logs
-join_channel = 725303414916907043
-event_channel = 725303414916907044
-admin_channel = 765896211139788830
+join_channel = 1186923494882156631
+event_channel = 1186923494882156632
+admin_channel = 1186923494466932810
 
 # This is where patron roles are at
 main_server = 725303414220914758
@@ -51,18 +47,11 @@ error_colour = 0xFF0000
 initial_extensions = [
     "cogs.admin",
     "cogs.owner",
-    "cogs.rand",
-    "cogs.more",
-    "cogs.org",
-    "cogs.snippet",
-    "cogs.economy",
     "cogs.configuration",
     "cogs.error_handler",
     "cogs.events",
     "cogs.general",
-    "cogs.miscellaneous",
-    #"cogs.top",
-    #"cogs.statcord"
+    "cogs.feature",
 ]
 
 
